@@ -17,15 +17,15 @@ jobs:
 
         steps:
             - name: check for new version
-              id: check-tag
+              id: check-version
               uses: biocatchltd/gh-actions-is-new-version@latest
 
             - name: release a new version
               if: steps.check-tag.outputs.is-new == 'true'
               uses: softprops/action-gh-release@v2
               with:
-                body: ${{ steps.check-tag.outputs.release-notes }}
-                tag_name: ${{ steps.check-tag.outputs.found-version }}
+                body: ${{ steps.check-version.outputs.release-notes }}
+                tag_name: ${{ steps.check-version.outputs.found-version }}
                 target_commitish: ${{ github.sha }}
                 prerelease: ${{ steps.check-tag.outputs.is-prerelease }}
 ```
