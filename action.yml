@@ -48,18 +48,18 @@ runs:
       run: |
         if [ $(git tag -l $PUSHED_VERSION) ]; then
             echo "Tag \"$PUSHED_VERSION\" already exists" >> $GITHUB_STEP_SUMMARY
-            echo "is-released=false" >> $GITHUB_OUTPUT
+            echo "is-new=false" >> $GITHUB_OUTPUT
         else
             echo "Tag \"$PUSHED_VERSION\" does not exist." >> $GITHUB_STEP_SUMMARY
             echo "Checked the following tags:"
             git tag -l >> $GITHUB_STEP_SUMMARY
-            echo "is-released=true" >> $GITHUB_OUTPUT
+            echo "is-new=true" >> $GITHUB_OUTPUT
         fi
 
     - name: get the release notes
       id: get-release-notes
       shell: bash
-      if: steps.check-if-tag-exists.outputs.is-released == 'true'
+      if: steps.check-if-tag-exists.outputs.is-new == 'true'
       run: |
         RELEASE_NOTES="$(awk '/^## / {if (!found) found=1; else exit} found' ${{ inputs.changelog-path }})"
         # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#multiline-strings
@@ -73,7 +73,7 @@ runs:
     - name: detect-prerelease
       id: create-release
       shell: bash
-      if: steps.check-if-tag-exists.outputs.is-released == 'true'
+      if: steps.check-if-tag-exists.outputs.is-new == 'true'
       run: |
         IS_PRERELEASE=${{ !contains(steps.fetch-version.outputs.found-version, '-')}}
         echo "is-prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
