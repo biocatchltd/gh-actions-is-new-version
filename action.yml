@@ -1,0 +1,79 @@
+# https://help.github.com/en/articles/metadata-syntax-for-github-actions
+name: 'Detect New Version'
+author: 'Biocatch'
+description: 'Will check whther the current version is unreleased'
+inputs:
+  toml-path:
+    description: 'The path to the toml file containing the version'
+    required: false
+    default: 'pyproject.toml'
+  changelog-path:
+    description: 'The path to the changelog file'
+    required: false
+    default: 'CHANGELOG.md'
+outputs:
+  is-new:
+    description: 'Whether the version was detected as new'
+    value: ${{ steps.check-if-tag-exists.outputs.is-new }}
+  found-version:
+    description: 'The found version'
+    value: ${{ steps.fetch-version.outputs.found-version }}
+  release-notes:
+    description: 'The release notes of the version'
+    value: ${{ steps.get-release-notes.outputs.release-notes }}
+  is-prerelease:
+    description: 'whether or not the version was detected as pre-release'
+    value: ${{ steps.detect-prerelease.outputs.is-prerelease }}
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Fetch current version
+      id: fetch-version
+      shell: bash
+      run: |
+        PUSHED_VERSION="$(cat ${{ inputs.pyproject-path }} | grep -E '^version' | cut -d '"' -f 2)"
+        echo "found-version=$PUSHED_VERSION" >> $GITHUB_OUTPUT
+        echo "Detection version from \`pyproject.toml\`: \`$PUSHED_VERSION\`" >> $GITHUB_STEP_SUMMARY 
+
+    - name: check if tag exists
+      id: check-if-tag-exists
+      shell: bash
+      env:
+        PUSHED_VERSION: ${{ steps.fetch-version.outputs.found-version }}
+      run: |
+        if [ $(git tag -l $PUSHED_VERSION) ]; then
+            echo "Tag \"$PUSHED_VERSION\" already exists" >> $GITHUB_STEP_SUMMARY
+            echo "is-released=false" >> $GITHUB_OUTPUT
+        else
+            echo "Tag \"$PUSHED_VERSION\" does not exist." >> $GITHUB_STEP_SUMMARY
+            echo "Checked the following tags:"
+            git tag -l >> $GITHUB_STEP_SUMMARY
+            echo "is-released=true" >> $GITHUB_OUTPUT
+        fi
+
+    - name: get the release notes
+      id: get-release-notes
+      shell: bash
+      if: steps.check-if-tag-exists.outputs.is-released == 'true'
+      run: |
+        RELEASE_NOTES="$(awk '/^## / {if (!found) found=1; else exit} found' ${{ inputs.changelog-path }})"
+        # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#multiline-strings
+        {
+            echo "release-notes<<EOF"
+            echo "$RELEASE_NOTES"
+            echo "EOF"
+        } >> $GITHUB_OUTPUT
+        echo "$RELEASE_NOTES" >> $GITHUB_STEP_SUMMARY
+    
+    - name: detect-prerelease
+      id: create-release
+      shell: bash
+      if: steps.check-if-tag-exists.outputs.is-released == 'true'
+      run: |
+        IS_PRERELEASE=${{ !contains(steps.fetch-version.outputs.found-version, '-')}}
+        echo "is-prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
