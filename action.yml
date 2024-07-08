@@ -36,7 +36,7 @@ runs:
       id: fetch-version
       shell: bash
       run: |
-        PUSHED_VERSION="$(cat ${{ inputs.toml-path }} | grep -E '^version' | cut -d '"' -f 2)"
+        PUSHED_VERSION="$(cat ${{ inputs.toml-path }} | grep -E -m 1 '^version' | cut -d '"' -f 2)"
         echo "found-version=$PUSHED_VERSION" >> $GITHUB_OUTPUT
         echo "Detection version from \`${{ inputs.toml-path }}\`: \`$PUSHED_VERSION\`" >> $GITHUB_STEP_SUMMARY 
 
