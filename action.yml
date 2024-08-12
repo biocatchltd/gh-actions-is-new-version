@@ -71,7 +71,7 @@ runs:
         echo "$RELEASE_NOTES" >> $GITHUB_STEP_SUMMARY
     
     - name: detect-prerelease
-      id: create-release
+      id: detect-prerelease
       shell: bash
       if: steps.check-if-tag-exists.outputs.is-new == 'true'
       run: |

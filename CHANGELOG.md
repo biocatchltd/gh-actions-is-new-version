@@ -1,4 +1,6 @@
 # is-new-version Changelog
+## 1.0.3
+* hopefully trully fixed incorrect marking of prerelease versions
 ## 1.0.2
 * Fixed incorrect marking of prerelease versions
 ## 1.0.1
