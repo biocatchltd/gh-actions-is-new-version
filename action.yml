@@ -75,5 +75,5 @@ runs:
       shell: bash
       if: steps.check-if-tag-exists.outputs.is-new == 'true'
       run: |
-        IS_PRERELEASE=${{ !contains(steps.fetch-version.outputs.found-version, '-')}}
+        IS_PRERELEASE=${{ contains(steps.fetch-version.outputs.found-version, 'a') || contains(steps.fetch-version.outputs.found-version, 'b') || contains(steps.fetch-version.outputs.found-version, 'rc') }}
         echo "is-prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
