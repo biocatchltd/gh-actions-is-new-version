@@ -33,9 +33,11 @@ jobs:
 ## inputs
 * `toml-path`: the path to the TOML file to use to determine the version, default to `pyproject.toml`
 * `changelog-path`: the path to the markdown file to use to determine the version, default to `CHANGELOG.md`
+* `release-prefix`: the prefix to be added to the release tag, default to an empty string
 
 ## outputs
 * `is-new`: whether the step detected a new version
 * `found-version`: the version detected by the action
 * `release-notes`: the markdown snippet of the release notes of the version, will be blank if no version is not new
 * `is-prerelease`: whether the version is detected as a pre-release (currently, all versions with a `-` in them are considered pre-releases). Will be blank if no version is not new.
+* `release-tag`: the full tag of the release, including the prefix

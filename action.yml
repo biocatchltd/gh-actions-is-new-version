@@ -1,7 +1,7 @@
 # https://help.github.com/en/articles/metadata-syntax-for-github-actions
 name: 'Detect New Version'
 author: 'Biocatch'
-description: 'Will check whther the current version is unreleased'
+description: 'Will check whether the current version is unreleased'
 inputs:
   toml-path:
     description: 'The path to the toml file containing the version'
@@ -11,6 +11,10 @@ inputs:
     description: 'The path to the changelog file'
     required: false
     default: 'CHANGELOG.md'
+  release-prefix:
+    description: 'The prefix to the name of the release'
+    required: false
+    default: ''
 outputs:
   is-new:
     description: 'Whether the version was detected as new'
@@ -24,6 +28,9 @@ outputs:
   is-prerelease:
     description: 'whether or not the version was detected as pre-release'
     value: ${{ steps.detect-prerelease.outputs.is-prerelease }}
+  release-tag:
+    description: 'The tag of the release'
+    value: ${{ steps.fetch-version.outputs.release-tag }}
 runs:
   using: "composite"
   steps:
@@ -39,18 +46,20 @@ runs:
         PUSHED_VERSION="$(cat ${{ inputs.toml-path }} | grep -E -m 1 '^version' | cut -d '"' -f 2)"
         echo "found-version=$PUSHED_VERSION" >> $GITHUB_OUTPUT
         echo "Detection version from \`${{ inputs.toml-path }}\`: \`$PUSHED_VERSION\`" >> $GITHUB_STEP_SUMMARY 
+        RELEASE_TAG="${{ inputs.release-prefix }}$PUSHED_VERSION"
+        echo "release-tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
 
     - name: check if tag exists
       id: check-if-tag-exists
       shell: bash
       env:
-        PUSHED_VERSION: ${{ steps.fetch-version.outputs.found-version }}
+        PENDING_VERSION: ${{ steps.fetch-version.outputs.release-tag }}
       run: |
-        if [ $(git tag -l $PUSHED_VERSION) ]; then
-            echo "Tag \"$PUSHED_VERSION\" already exists" >> $GITHUB_STEP_SUMMARY
+        if [ $(git tag -l $PENDING_VERSION) ]; then
+            echo "Tag \"$PENDING_VERSION\" already exists" >> $GITHUB_STEP_SUMMARY
             echo "is-new=false" >> $GITHUB_OUTPUT
         else
-            echo "Tag \"$PUSHED_VERSION\" does not exist." >> $GITHUB_STEP_SUMMARY
+            echo "Tag \"$PENDING_VERSION\" does not exist." >> $GITHUB_STEP_SUMMARY
             echo "Checked the following tags:"
             git tag -l >> $GITHUB_STEP_SUMMARY
             echo "is-new=true" >> $GITHUB_OUTPUT
